@@ -1,7 +1,7 @@
 {
   "app": {
     "name": "BudgetPilot",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "currency": "USD",
     "locale": "en-US"
   },
@@ -9,6 +9,35 @@
   "google": {
     "clientId": "655826857870-im7kc668agfc2nbi4aca38j17855kv4l.apps.googleusercontent.com",
     "spreadsheetId": "1iNNHZnwriIDtcB7V7dJLIk1tagldj4zJM-JJDkuJPy8"
+  },
+
+  "taxes": {
+    "location": "Columbus, IN — Bartholomew County",
+    "year": 2026,
+    "federal": {
+      "label": "Federal income tax",
+      "estimatedEffectiveRate": 0.22,
+      "note": "Adjust based on your actual W-2 withholding"
+    },
+    "socialSecurity": {
+      "label": "Social Security (OASDI)",
+      "rate": 0.062,
+      "wageBase": 176100
+    },
+    "medicare": {
+      "label": "Medicare",
+      "rate": 0.0145
+    },
+    "state": {
+      "label": "Indiana state income tax",
+      "rate": 0.0295,
+      "note": "Flat rate — decreasing to 2.90% in 2027"
+    },
+    "county": {
+      "label": "Bartholomew County income tax",
+      "rate": 0.0125,
+      "note": "Columbus, IN residents rate"
+    }
   },
 
   "categories": [
