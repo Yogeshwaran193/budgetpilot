@@ -2,7 +2,7 @@
   "name": "BudgetPilot",
   "short_name": "BudgetPilot",
   "description": "Personal budget tracker backed by Google Sheets",
-  "start_url": "/index.html",
+  "start_url": "/budgetpilot/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#f5f5f3",
