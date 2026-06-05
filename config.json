@@ -1,0 +1,31 @@
+{
+  "app": {
+    "name": "BudgetPilot",
+    "version": "1.0.0",
+    "currency": "USD",
+    "locale": "en-US"
+  },
+
+  "google": {
+    "clientId": "655826857870-im7kc668agfc2nbi4aca38j17855kv4l.apps.googleusercontent.com",
+    "spreadsheetId": "1iNNHZnwriIDtcB7V7dJLIk1tagldj4zJM-JJDkuJPy8"
+  },
+
+  "categories": [
+    { "id": "housing",       "name": "Housing",       "monthly": 1200, "color": "#5DCAA5" },
+    { "id": "groceries",     "name": "Groceries",     "monthly": 400,  "color": "#9FE1CB" },
+    { "id": "dining",        "name": "Dining out",    "monthly": 150,  "color": "#F0997B" },
+    { "id": "transport",     "name": "Transport",     "monthly": 150,  "color": "#C0DD97" },
+    { "id": "subscriptions", "name": "Subscriptions", "monthly": 100,  "color": "#FAC775" },
+    { "id": "utilities",     "name": "Utilities",     "monthly": 120,  "color": "#85B7EB" },
+    { "id": "shopping",      "name": "Shopping",      "monthly": 200,  "color": "#AFA9EC" },
+    { "id": "entertainment", "name": "Entertainment", "monthly": 80,   "color": "#F5C4B3" },
+    { "id": "health",        "name": "Health",        "monthly": 60,   "color": "#C0DD97" },
+    { "id": "other",         "name": "Other",         "monthly": 100,  "color": "#B4B2A9" }
+  ],
+
+  "alerts": {
+    "overspendThreshold": 0.9,
+    "lowBalanceThreshold": 200
+  }
+}

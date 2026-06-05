@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#1D9E75">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="BudgetPilot">
+<title>BudgetPilot</title>
+<link rel="manifest" href="manifest.json">
+<style>
+/* ── Variables ─────────────────────────────────────────── */
+:root {
+  --bg0: #ffffff; --bg1: #f5f5f3; --bg2: #eeede8;
+  --t0: #1a1a18; --t1: #5f5e5a; --t2: #888780;
+  --border: rgba(30,30,20,.12); --border2: rgba(30,30,20,.25);
+  --accent: #1D9E75; --accent-l: #E1F5EE; --accent-d: #085041;
+  --danger: #D85A30; --danger-l: #FAECE7;
+  --warn: #EF9F27;   --warn-l: #FAEEDA;
+  --purple: #7F77DD; --purple-l: #EEEDFE;
+  --blue-l: #E6F1FB; --blue-d: #185FA5;
+  --r: 8px; --rl: 12px;
+  --sidebar: 52px;
+  --mono: 'Courier New', monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg0:#1a1a18; --bg1:#222220; --bg2:#2a2a28;
+    --t0:#f0efea; --t1:#a0a098; --t2:#666660;
+    --border:rgba(255,255,240,.1); --border2:rgba(255,255,240,.2);
+    --accent-l:#04342C; --danger-l:#4A1B0C;
+    --warn-l:#412402; --purple-l:#26215C; --blue-l:#042C53;
+  }
+}
+/* ── Reset & Base ──────────────────────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,'Segoe UI',sans-serif;background:var(--bg2);color:var(--t0);min-height:100vh}
+[hidden]{display:none!important}
+input,select,button{font-family:inherit}
+button{cursor:pointer}
+a{color:inherit}
+
+/* ── Screens ───────────────────────────────────────────── */
+#screen-auth{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:100vh;padding:2rem;background:var(--bg0);
+}
+.logo-mark{
+  width:52px;height:52px;background:var(--accent);border-radius:14px;
+  display:flex;align-items:center;justify-content:center;margin-bottom:1.25rem;
+}
+.logo-mark svg{width:28px;height:28px;fill:none;stroke:#fff;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+
+#screen-setup{
+  max-width:440px;margin:0 auto;padding:2rem 1.25rem;background:var(--bg0);min-height:100vh;
+}
+
+/* ── App shell ─────────────────────────────────────────── */
+#screen-app{display:flex;min-height:100vh}
+
+#sidebar{
+  width:var(--sidebar);background:var(--bg1);border-right:.5px solid var(--border);
+  display:flex;flex-direction:column;align-items:center;padding:12px 0;gap:18px;
+  position:fixed;left:0;top:0;height:100vh;z-index:50;
+}
+#main{flex:1;margin-left:var(--sidebar);padding:1.25rem;overflow-y:auto;background:var(--bg2)}
+
+#bottom-nav{
+  display:none;position:fixed;bottom:0;left:0;right:0;
+  background:var(--bg1);border-top:.5px solid var(--border);
+  justify-content:space-around;padding:6px 0 max(6px,env(safe-area-inset-bottom));
+  z-index:50;
+}
+
+@media(max-width:600px){
+  #sidebar{display:none}
+  #main{margin-left:0;padding:1rem;padding-bottom:72px}
+  #bottom-nav{display:flex}
+  .grid-3-2{grid-template-columns:1fr!important}
+  .grid-4{grid-template-columns:1fr 1fr!important}
+  .grid-2{grid-template-columns:1fr!important}
+}
+
+/* ── Nav buttons ───────────────────────────────────────── */
+.nav-btn{
+  background:none;border:none;padding:7px;color:var(--t2);
+  border-radius:var(--r);width:34px;height:34px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;transition:color .15s,background .15s;
+}
+.nav-btn:hover,.nav-btn.active{color:var(--t0);background:var(--bg2)}
+.nav-btn.active{color:var(--accent)}
+.avatar{
+  width:26px;height:26px;border-radius:50%;background:var(--accent);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:600;color:#fff;cursor:pointer;
+}
+
+/* ── Cards ─────────────────────────────────────────────── */
+.card{background:var(--bg0);border:.5px solid var(--border);border-radius:var(--rl);padding:1rem 1.25rem}
+.metric{background:var(--bg1);border-radius:var(--r);padding:11px 14px}
+.metric-label{font-size:11px;color:var(--t1);margin-bottom:5px;display:flex;align-items:center;gap:3px}
+.metric-value{font-size:21px;font-weight:500;color:var(--t0);font-family:var(--mono)}
+.metric-sub{font-size:11px;color:var(--t2);margin-top:3px}
+
+/* ── Grid helpers ──────────────────────────────────────── */
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid-3-2{display:grid;grid-template-columns:3fr 2fr;gap:12px}
+.mb{margin-bottom:1.25rem}
+
+/* ── Section header ────────────────────────────────────── */
+.hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.25rem}
+.hdr-title{font-size:20px;font-weight:500}
+
+/* ── Buttons ───────────────────────────────────────────── */
+.btn{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:7px 14px;border-radius:var(--r);border:.5px solid var(--border2);
+  background:var(--bg0);color:var(--t0);font-size:13px;
+  transition:background .15s;
+}
+.btn:hover{background:var(--bg1)}
+.btn-primary{background:var(--accent);color:#fff;border-color:transparent}
+.btn-primary:hover{background:var(--accent-d)}
+.btn-sm{padding:5px 11px;font-size:12px}
+.btn-full{width:100%;justify-content:center}
+
+/* ── Transaction row ───────────────────────────────────── */
+.tx-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:.5px solid var(--border)}
+.tx-row:last-child{border-bottom:none}
+.tx-icon{width:30px;height:30px;border-radius:var(--r);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px}
+.tx-info{flex:1;margin-left:9px;min-width:0}
+.tx-name{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tx-meta{font-size:11px;color:var(--t2);margin-top:1px}
+.tx-amt{font-size:13px;font-weight:500;font-family:var(--mono);white-space:nowrap;margin-left:8px}
+.tx-amt.income{color:var(--accent)}
+.tx-amt.expense{color:var(--danger)}
+
+/* ── Progress bar ──────────────────────────────────────── */
+.prog-track{background:var(--bg1);border-radius:4px;height:7px;overflow:hidden;margin:6px 0}
+.prog-fill{height:100%;border-radius:4px;transition:width .4s}
+
+/* ── Insight card ──────────────────────────────────────── */
+.insight{border-radius:var(--r);padding:10px 12px;margin-bottom:8px}
+.insight-title{font-size:12px;font-weight:500;margin-bottom:3px}
+.insight-body{font-size:11px;line-height:1.55}
+
+/* ── Form elements ─────────────────────────────────────── */
+.fg{margin-bottom:14px}
+.fl{display:block;font-size:11px;color:var(--t1);margin-bottom:5px}
+.fi,.fs{
+  width:100%;padding:8px 11px;border:.5px solid var(--border2);border-radius:var(--r);
+  background:var(--bg1);color:var(--t0);font-size:14px;
+}
+.fi:focus,.fs:focus{outline:none;border-color:var(--accent)}
+.fs{appearance:none}
+.fr2{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.fhint{font-size:11px;color:var(--t2);margin-top:4px}
+
+/* ── Dialog ────────────────────────────────────────────── */
+dialog{
+  border:.5px solid var(--border);border-radius:var(--rl);
+  padding:1.4rem;background:var(--bg0);color:var(--t0);
+  max-width:460px;width:90vw;
+}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+.dialog-title{font-size:15px;font-weight:500;margin-bottom:1.1rem}
+.dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:1.25rem}
+
+/* ── Chart wrapper ─────────────────────────────────────── */
+.cw{position:relative;width:100%}
+
+/* ── Toast ─────────────────────────────────────────────── */
+#toast{
+  position:fixed;bottom:72px;left:50%;transform:translateX(-50%);
+  background:var(--t0);color:var(--bg0);padding:9px 18px;border-radius:100px;
+  font-size:12px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;white-space:nowrap;
+}
+#toast.show{opacity:1}
+
+/* ── Empty / loading states ────────────────────────────── */
+.empty{text-align:center;padding:1.5rem;color:var(--t2);font-size:13px}
+.loading-state{display:flex;align-items:center;justify-content:center;padding:1.5rem;color:var(--t2);font-size:13px;gap:6px}
+
+/* ── Pay stub row ──────────────────────────────────────── */
+.ps-row{
+  display:flex;justify-content:space-between;align-items:center;
+  background:var(--bg1);border-radius:var(--r);padding:9px 12px;margin-bottom:7px;
+}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════
+     AUTH SCREEN
+════════════════════════════════════════════════════════ -->
+<div id="screen-auth">
+  <div class="logo-mark" aria-hidden="true">
+    <svg viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+  </div>
+  <h1 style="font-size:26px;font-weight:600;margin-bottom:7px">BudgetPilot</h1>
+  <p style="color:var(--t1);font-size:14px;margin-bottom:2rem;text-align:center;max-width:280px">
+    Personal finance tracker backed by your own Google Sheet.
+  </p>
+  <div id="google-signin-btn"></div>
+  <p style="font-size:11px;color:var(--t2);margin-top:1rem;text-align:center">
+    Your data stays in your own Google Sheet.<br>Nothing stored on third-party servers.
+  </p>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     SETUP WIZARD
+════════════════════════════════════════════════════════ -->
+<div id="screen-setup" hidden>
+  <div class="logo-mark" aria-hidden="true" style="margin:0 0 1rem">
+    <svg viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+  </div>
+  <h2 style="font-size:18px;font-weight:500;margin-bottom:4px">Set up your profile</h2>
+  <p style="font-size:12px;color:var(--t1);margin-bottom:1.5rem">Takes 2 minutes. Everything can be changed later.</p>
+
+  <div class="fg">
+    <label class="fl">Your name</label>
+    <input class="fi" id="s-name" type="text" placeholder="Yogeshwaran">
+  </div>
+  <div class="fg">
+    <label class="fl">Employer</label>
+    <input class="fi" id="s-employer" type="text" placeholder="Cummins Inc.">
+  </div>
+  <div class="fr2">
+    <div class="fg">
+      <label class="fl">Pay frequency</label>
+      <select class="fs" id="s-payfreq">
+        <option value="biweekly">Bi-weekly</option>
+        <option value="semimonthly">Semi-monthly</option>
+        <option value="monthly">Monthly</option>
+        <option value="weekly">Weekly</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label class="fl">Gross per period ($)</label>
+      <input class="fi" id="s-salary" type="number" placeholder="5200">
+    </div>
+  </div>
+  <div class="fg">
+    <label class="fl">Google Spreadsheet ID
+      <span style="color:var(--t2)"> — from the URL</span>
+    </label>
+    <input class="fi" id="s-sheetid" type="text" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms">
+    <p class="fhint">Create a blank Google Sheet and paste its ID here. The app will create all tabs automatically.</p>
+  </div>
+  <button class="btn btn-primary btn-full" onclick="App.completeSetup()">Get started →</button>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     MAIN APP
+════════════════════════════════════════════════════════ -->
+<div id="screen-app" hidden>
+
+  <!-- Sidebar (desktop) -->
+  <nav id="sidebar" aria-label="Main navigation">
+    <div class="logo-mark" aria-hidden="true" style="width:30px;height:30px;border-radius:8px;margin-bottom:4px">
+      <svg viewBox="0 0 24 24" width="16" height="16"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+    </div>
+    <button class="nav-btn active" data-view="dashboard"    title="Dashboard"    aria-label="Dashboard">📊</button>
+    <button class="nav-btn"        data-view="transactions" title="Transactions"  aria-label="Transactions">💳</button>
+    <button class="nav-btn"        data-view="paystubs"     title="Pay stubs"    aria-label="Pay stubs">🧾</button>
+    <button class="nav-btn"        data-view="savings"      title="Savings goals" aria-label="Savings goals">🎯</button>
+    <button class="nav-btn"        data-view="advisor"      title="AI advisor"   aria-label="AI advisor">🤖</button>
+    <div style="flex:1"></div>
+    <button class="nav-btn"        data-view="settings"     title="Settings"     aria-label="Settings">⚙️</button>
+    <div id="av-sidebar" class="avatar" aria-label="Profile"></div>
+  </nav>
+
+  <!-- Bottom nav (mobile) -->
+  <nav id="bottom-nav" aria-label="Mobile navigation">
+    <button class="nav-btn active" data-view="dashboard"    aria-label="Dashboard">📊</button>
+    <button class="nav-btn"        data-view="transactions" aria-label="Transactions">💳</button>
+    <button class="nav-btn"        data-view="paystubs"     aria-label="Pay stubs">🧾</button>
+    <button class="nav-btn"        data-view="savings"      aria-label="Savings goals">🎯</button>
+    <button class="nav-btn"        data-view="advisor"      aria-label="AI advisor">🤖</button>
+  </nav>
+
+  <main id="main">
+
+    <!-- ── DASHBOARD ───────────────────────────────────── -->
+    <section id="view-dashboard">
+      <div class="hdr">
+        <div>
+          <p style="font-size:12px;color:var(--t1);margin-bottom:1px">Good morning,</p>
+          <h1 id="dash-name" class="hdr-title">—</h1>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <select id="month-picker" class="fs" style="width:auto;font-size:12px;padding:6px 10px" onchange="Dashboard.load()"></select>
+          <button class="btn btn-sm btn-primary" onclick="Modals.openTx()">+ Add</button>
+        </div>
+      </div>
+
+      <div class="grid-4 mb" id="kpi-grid">
+        <div class="metric">
+          <p class="metric-label">💵 Monthly income</p>
+          <p class="metric-value" id="kpi-income">—</p>
+          <p class="metric-sub" id="kpi-income-sub"></p>
+        </div>
+        <div class="metric">
+          <p class="metric-label">📤 Total expenses</p>
+          <p class="metric-value" id="kpi-expenses">—</p>
+          <p class="metric-sub" id="kpi-exp-sub"></p>
+        </div>
+        <div class="metric">
+          <p class="metric-label">💰 Saved this month</p>
+          <p class="metric-value" id="kpi-saved">—</p>
+          <p class="metric-sub" id="kpi-saved-sub"></p>
+        </div>
+        <div class="metric">
+          <p class="metric-label">🏦 Unallocated</p>
+          <p class="metric-value" id="kpi-balance">—</p>
+          <p class="metric-sub">Until next pay stub</p>
+        </div>
+      </div>
+
+      <div class="grid-3-2 mb">
+        <div class="card">
+          <p style="font-size:13px;font-weight:500;margin-bottom:2px">Spending by category</p>
+          <p style="font-size:11px;color:var(--t2);margin-bottom:12px" id="dash-period-lbl">This month</p>
+          <div class="cw" style="height:320px">
+            <canvas id="chart-spend" role="img" aria-label="Spending by category horizontal bar chart"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <p style="font-size:13px;font-weight:500;margin-bottom:2px">Budget health</p>
+          <p style="font-size:11px;color:var(--t2);margin-bottom:12px">Income allocation</p>
+          <div class="cw" style="height:180px">
+            <canvas id="chart-donut" role="img" aria-label="Income allocation donut chart"></canvas>
+          </div>
+          <div id="donut-legend" style="display:flex;flex-direction:column;gap:8px;margin-top:14px"></div>
+        </div>
+      </div>
+
+      <div class="card mb">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <p style="font-size:13px;font-weight:500">Recent transactions</p>
+          <button class="btn btn-sm" onclick="App.showView('transactions')">View all</button>
+        </div>
+        <div id="dash-recent"></div>
+      </div>
+
+      <!-- Budget vs Actual bar per category -->
+      <div class="card">
+        <p style="font-size:13px;font-weight:500;margin-bottom:2px">Budget vs actual</p>
+        <p style="font-size:11px;color:var(--t2);margin-bottom:12px">How you're tracking against your limits</p>
+        <div id="budget-bars"></div>
+      </div>
+    </section>
+
+    <!-- ── TRANSACTIONS ─────────────────────────────────── -->
+    <section id="view-transactions" hidden>
+      <div class="hdr">
+        <h1 class="hdr-title">Transactions</h1>
+        <button class="btn btn-sm btn-primary" onclick="Modals.openTx()">+ Add transaction</button>
+      </div>
+      <div class="card">
+        <div style="display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap">
+          <select id="tx-month" class="fs" style="width:auto;font-size:12px;padding:5px 9px" onchange="TxView.load()"></select>
+          <select id="tx-cat"   class="fs" style="width:auto;font-size:12px;padding:5px 9px" onchange="TxView.load()">
+            <option value="">All categories</option>
+          </select>
+          <select id="tx-type"  class="fs" style="width:auto;font-size:12px;padding:5px 9px" onchange="TxView.load()">
+            <option value="">All types</option>
+            <option value="income">Income</option>
+            <option value="expense">Expense</option>
+          </select>
+        </div>
+        <div id="tx-list"></div>
+      </div>
+    </section>
+
+    <!-- ── PAY STUBS ────────────────────────────────────── -->
+    <section id="view-paystubs" hidden>
+      <div class="hdr">
+        <h1 class="hdr-title">Pay stubs</h1>
+        <button class="btn btn-sm btn-primary" onclick="Modals.openPs()">+ Record pay stub</button>
+      </div>
+      <div class="grid-2 mb">
+        <div class="metric">
+          <p class="metric-label">Year-to-date gross</p>
+          <p class="metric-value" id="ytd-gross">—</p>
+        </div>
+        <div class="metric">
+          <p class="metric-label">Year-to-date net</p>
+          <p class="metric-value" id="ytd-net">—</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="cw" style="height:220px;margin-bottom:1rem">
+          <canvas id="chart-income-trend" role="img" aria-label="Monthly gross income trend line chart"></canvas>
+        </div>
+        <div id="ps-list"></div>
+      </div>
+    </section>
+
+    <!-- ── SAVINGS GOALS ────────────────────────────────── -->
+    <section id="view-savings" hidden>
+      <div class="hdr">
+        <h1 class="hdr-title">Savings goals</h1>
+        <button class="btn btn-sm btn-primary" onclick="Modals.openGoal()">+ New goal</button>
+      </div>
+      <div class="grid-2" id="goals-grid"></div>
+    </section>
+
+    <!-- ── AI ADVISOR ───────────────────────────────────── -->
+    <section id="view-advisor" hidden>
+      <div class="hdr">
+        <h1 class="hdr-title">AI advisor</h1>
+        <button class="btn btn-sm" onclick="Advisor.refresh()">↻ Refresh insights</button>
+      </div>
+      <p style="font-size:13px;color:var(--t1);margin-bottom:1.25rem">
+        Analyzes your last 3 months of spending and returns personalized recommendations.
+      </p>
+      <div id="advisor-out"><div class="empty">Hit "Refresh insights" to analyze your spending patterns.</div></div>
+    </section>
+
+    <!-- ── SETTINGS ─────────────────────────────────────── -->
+    <section id="view-settings" hidden>
+      <div class="hdr"><h1 class="hdr-title">Settings</h1></div>
+
+      <div class="card mb">
+        <p style="font-size:13px;font-weight:500;margin-bottom:1rem">Profile</p>
+        <div class="fg"><label class="fl">Name</label><input class="fi" id="set-name" type="text"></div>
+        <div class="fg"><label class="fl">Employer</label><input class="fi" id="set-employer" type="text"></div>
+        <div class="fg">
+          <label class="fl">Pay frequency</label>
+          <select class="fs" id="set-payfreq">
+            <option value="biweekly">Bi-weekly</option>
+            <option value="semimonthly">Semi-monthly</option>
+            <option value="monthly">Monthly</option>
+            <option value="weekly">Weekly</option>
+          </select>
+        </div>
+        <button class="btn btn-sm btn-primary" onclick="SettingsView.saveProfile()">Save profile</button>
+      </div>
+
+      <div class="card mb">
+        <p style="font-size:13px;font-weight:500;margin-bottom:1rem">Monthly budget limits</p>
+        <div id="budget-form"></div>
+        <button class="btn btn-sm btn-primary" onclick="SettingsView.saveBudgets()" style="margin-top:10px">Save budgets</button>
+      </div>
+
+      <div class="card mb">
+        <p style="font-size:13px;font-weight:500;margin-bottom:8px">AI advisor (Anthropic)</p>
+        <p style="font-size:12px;color:var(--t1);margin-bottom:10px">API key is stored locally on this device only — never sent to any third party.</p>
+        <div class="fg">
+          <label class="fl">Anthropic API key</label>
+          <input class="fi" id="set-apikey" type="password" placeholder="sk-ant-…">
+        </div>
+        <button class="btn btn-sm btn-primary" onclick="SettingsView.saveApiKey()">Save API key</button>
+      </div>
+
+      <div class="card">
+        <p style="font-size:13px;font-weight:500;margin-bottom:8px">Google Sheets</p>
+        <p style="font-size:12px;color:var(--t1);margin-bottom:10px">Spreadsheet ID: <code id="set-sheetid" style="font-size:12px"></code></p>
+        <a id="set-sheet-link" href="#" target="_blank" rel="noopener" class="btn btn-sm">Open spreadsheet ↗</a>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     MODALS
+════════════════════════════════════════════════════════ -->
+
+<dialog id="dlg-tx" aria-modal="true">
+  <h2 class="dialog-title">Add transaction</h2>
+  <div class="fg">
+    <label class="fl">Type</label>
+    <select class="fs" id="tx-type-sel" onchange="Modals.toggleTxType()">
+      <option value="expense">Expense</option>
+      <option value="income">Income</option>
+    </select>
+  </div>
+  <div class="fr2">
+    <div class="fg"><label class="fl">Date</label><input class="fi" id="tx-date" type="date"></div>
+    <div class="fg"><label class="fl">Amount ($)</label><input class="fi" id="tx-amount" type="number" step="0.01" placeholder="0.00"></div>
+  </div>
+  <div class="fg"><label class="fl">Description</label><input class="fi" id="tx-desc" type="text" placeholder="e.g. Walmart, Netflix, Rent"></div>
+  <div class="fg" id="tx-cat-grp">
+    <label class="fl">Category</label>
+    <select class="fs" id="tx-cat-sel"></select>
+  </div>
+  <div class="fg"><label class="fl">Notes (optional)</label><input class="fi" id="tx-notes" type="text" placeholder="Any context"></div>
+  <div class="dialog-actions">
+    <button class="btn" onclick="document.getElementById('dlg-tx').close()">Cancel</button>
+    <button class="btn btn-primary" onclick="TxActions.save()">Save transaction</button>
+  </div>
+</dialog>
+
+<dialog id="dlg-ps" aria-modal="true">
+  <h2 class="dialog-title">Record pay stub</h2>
+  <div class="fr2">
+    <div class="fg"><label class="fl">Pay date</label><input class="fi" id="ps-date" type="date"></div>
+    <div class="fg"><label class="fl">Gross ($)</label><input class="fi" id="ps-gross" type="number" step="0.01"></div>
+  </div>
+  <div class="fr2">
+    <div class="fg"><label class="fl">Net ($)</label><input class="fi" id="ps-net" type="number" step="0.01"></div>
+    <div class="fg"><label class="fl">Employer</label><input class="fi" id="ps-employer" type="text"></div>
+  </div>
+  <div class="fg"><label class="fl">Pay period (optional)</label><input class="fi" id="ps-period" type="text" placeholder="May 18 – Jun 1, 2026"></div>
+  <div class="dialog-actions">
+    <button class="btn" onclick="document.getElementById('dlg-ps').close()">Cancel</button>
+    <button class="btn btn-primary" onclick="PsActions.save()">Save pay stub</button>
+  </div>
+</dialog>
+
+<dialog id="dlg-goal" aria-modal="true">
+  <h2 class="dialog-title">New savings goal</h2>
+  <div class="fg"><label class="fl">Goal name</label><input class="fi" id="goal-name" type="text" placeholder="Emergency fund"></div>
+  <div class="fr2">
+    <div class="fg"><label class="fl">Target ($)</label><input class="fi" id="goal-target" type="number"></div>
+    <div class="fg"><label class="fl">Already saved ($)</label><input class="fi" id="goal-current" type="number" value="0"></div>
+  </div>
+  <div class="fg"><label class="fl">Target date</label><input class="fi" id="goal-date" type="date"></div>
+  <div class="dialog-actions">
+    <button class="btn" onclick="document.getElementById('dlg-goal').close()">Cancel</button>
+    <button class="btn btn-primary" onclick="GoalActions.save()">Create goal</button>
+  </div>
+</dialog>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<!-- ════════════════════════════════════════════════════════
+     SCRIPTS
+════════════════════════════════════════════════════════ -->
+<script src="https://accounts.google.com/gsi/client" async></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+'use strict';
+
+// ── CONFIG ────────────────────────────────────────────────
+let CFG = null;
+
+async function loadConfig() {
+  const r = await fetch('./config.json');
+  CFG = await r.json();
+}
+
+// ── GOOGLE AUTH ───────────────────────────────────────────
+const Auth = {
+  token: null,
+  tokenClient: null,
+  userInfo: null,
+
+  init() {
+    // Poll until GSI script loads
+    const t = setInterval(() => {
+      if (!window.google) return;
+      clearInterval(t);
+
+      google.accounts.id.initialize({
+        client_id: CFG.google.clientId,
+        callback: (cred) => {
+          // Decode id_token payload for display name/avatar
+          const p = JSON.parse(atob(cred.credential.split('.')[1]));
+          this.userInfo = { name: p.name, email: p.email };
+          this.tokenClient.requestAccessToken({ prompt: '' });
+        }
+      });
+
+      google.accounts.id.renderButton(
+        document.getElementById('google-signin-btn'),
+        { theme: 'outline', size: 'large', text: 'signin_with' }
+      );
+
+      this.tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: CFG.google.clientId,
+        scope: 'https://www.googleapis.com/auth/spreadsheets',
+        callback: (resp) => {
+          this.token = resp.access_token;
+          App.onAuth();
+        }
+      });
+    }, 80);
+  }
+};
+
+// ── SHEETS API ────────────────────────────────────────────
+const Sheets = {
+  BASE: 'https://sheets.googleapis.com/v4/spreadsheets',
+
+  _hdr() {
+    return { Authorization: `Bearer ${Auth.token}`, 'Content-Type': 'application/json' };
+  },
+
+  async get(range) {
+    const url = `${this.BASE}/${CFG.google.spreadsheetId}/values/${encodeURIComponent(range)}`;
+    const r = await fetch(url, { headers: this._hdr() });
+    if (!r.ok) throw new Error(`GET ${range}: ${r.status}`);
+    return (await r.json()).values || [];
+  },
+
+  async append(sheet, rows) {
+    const url = `${this.BASE}/${CFG.google.spreadsheetId}/values/${encodeURIComponent(sheet)}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+    const r = await fetch(url, { method: 'POST', headers: this._hdr(), body: JSON.stringify({ values: rows }) });
+    if (!r.ok) throw new Error(`APPEND ${sheet}: ${r.status}`);
+    return r.json();
+  },
+
+  async put(range, rows) {
+    const url = `${this.BASE}/${CFG.google.spreadsheetId}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`;
+    const r = await fetch(url, { method: 'PUT', headers: this._hdr(), body: JSON.stringify({ values: rows }) });
+    if (!r.ok) throw new Error(`PUT ${range}: ${r.status}`);
+    return r.json();
+  },
+
+  // Create all tabs + headers on first run
+  async bootstrap() {
+    const url = `${this.BASE}/${CFG.google.spreadsheetId}:batchUpdate`;
+    const sheets = ['Transactions','PayStubs','SavingsGoals','Budgets','Profile'];
+    await fetch(url, {
+      method: 'POST', headers: this._hdr(),
+      body: JSON.stringify({ requests: sheets.map(t => ({ addSheet: { properties: { title: t } } })) })
+    });
+    await this.put('Transactions!A1:H1', [['ID','Date','Description','Amount','Category','Type','Notes','PayStubID']]);
+    await this.put('PayStubs!A1:G1',     [['ID','Date','Employer','Gross','Net','Tax','Period']]);
+    await this.put('SavingsGoals!A1:G1', [['ID','Name','Target','Current','TargetDate','Color','Status']]);
+    await this.put('Budgets!A1:C1',      [['Month','Category','BudgetAmount']]);
+    await this.put('Profile!A1:B1',      [['Key','Value']]);
+  }
+};
+
+// ── STATE ─────────────────────────────────────────────────
+const S = {
+  transactions: [],
+  payStubs: [],
+  goals: [],
+  profile: {},
+
+  // Row → object parsers
+  parseTx(rows) {
+    return rows.slice(1).filter(r => r[0]).map(r => ({
+      id: r[0], date: r[1], description: r[2],
+      amount: +r[3] || 0, category: r[4], type: r[5], notes: r[6] || '', psId: r[7] || ''
+    }));
+  },
+  parsePs(rows) {
+    return rows.slice(1).filter(r => r[0]).map(r => ({
+      id: r[0], date: r[1], employer: r[2],
+      gross: +r[3] || 0, net: +r[4] || 0, tax: +r[5] || 0, period: r[6] || ''
+    }));
+  },
+  parseGoals(rows) {
+    return rows.slice(1).filter(r => r[0]).map(r => ({
+      id: r[0], name: r[1], target: +r[2] || 0, current: +r[3] || 0,
+      targetDate: r[4] || '', color: r[5] || '', status: r[6] || 'active'
+    }));
+  },
+  parseProfile(rows) {
+    const o = {};
+    rows.slice(1).forEach(r => { if (r[0]) o[r[0]] = r[1]; });
+    return o;
+  }
+};
+
+// ── UTIL ──────────────────────────────────────────────────
+const U = {
+  $: (id) => document.getElementById(id),
+  fmt:  (n) => '$' + Math.round(Math.abs(n)).toLocaleString('en-US'),
+  fmtD: (n) => '$' + (+Math.abs(n)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+  uid:  ()  => Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+  today: () => new Date().toISOString().split('T')[0],
+  mk:   (d) => { const dt = new Date(d); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`; },
+  ml:   (k) => { const [y,m] = k.split('-'); return new Date(+y,+m-1,1).toLocaleString('default',{month:'long',year:'numeric'}); },
+
+  catColor(id) {
+    return CFG.categories.find(c => c.id === id)?.color || '#B4B2A9';
+  },
+  catName(id) {
+    return CFG.categories.find(c => c.id === id)?.name || id;
+  },
+  catIcon(id) {
+    const icons = { housing:'🏠', groceries:'🛒', dining:'🍽️', transport:'🚗',
+      subscriptions:'📺', utilities:'💡', shopping:'🛍️', entertainment:'🎬',
+      health:'💊', savings:'💰', income:'💵', other:'📦' };
+    return icons[id] || '📦';
+  },
+
+  toast(msg) {
+    const t = U.$('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  },
+
+  fillMonthPicker(id) {
+    const sel = U.$(id), cur = U.mk(new Date());
+    sel.innerHTML = '';
+    for (let i = 0; i < 12; i++) {
+      const d = new Date(); d.setMonth(d.getMonth() - i);
+      const k = U.mk(d);
+      const o = document.createElement('option');
+      o.value = k; o.textContent = U.ml(k);
+      if (k === cur) o.selected = true;
+      sel.appendChild(o);
+    }
+  },
+
+  fillCatSelect(id, all = false) {
+    const sel = U.$(id);
+    sel.innerHTML = all ? '<option value="">All categories</option>' : '';
+    CFG.categories.forEach(c => {
+      if (!all && c.id === 'income') return;
+      const o = document.createElement('option');
+      o.value = c.id; o.textContent = c.name;
+      sel.appendChild(o);
+    });
+  },
+
+  txRow(t) {
+    return `<div class="tx-row">
+      <div class="tx-icon" style="background:${U.catColor(t.category)}22">${U.catIcon(t.category)}</div>
+      <div class="tx-info">
+        <p class="tx-name">${t.description}</p>
+        <p class="tx-meta">${U.catName(t.category)} · ${t.date}</p>
+      </div>
+      <p class="tx-amt ${t.type}">${t.type==='income'?'+':'-'}${U.fmtD(t.amount)}</p>
+    </div>`;
+  }
+};
+
+// ── CHARTS ────────────────────────────────────────────────
+const Charts = {
+  spend: null, donut: null, trend: null,
+
+  spend_(txList) {
+    const ctx = U.$('chart-spend'); if (!ctx) return;
+    if (this.spend) this.spend.destroy();
+    const totals = {};
+    txList.filter(t => t.type === 'expense').forEach(t => { totals[t.category] = (totals[t.category]||0) + t.amount; });
+    const sorted = Object.entries(totals).sort((a,b) => b[1]-a[1]);
+    this.spend = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: sorted.map(([k]) => U.catName(k)),
+        datasets: [{ data: sorted.map(([,v]) => Math.round(v)), backgroundColor: sorted.map(([k]) => U.catColor(k)), borderRadius: 4, borderSkipped: false }]
+      },
+      options: {
+        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' ' + U.fmtD(c.parsed.x) } } },
+        scales: {
+          x: { grid: { color: 'rgba(136,135,128,.15)' }, ticks: { font:{size:11}, color:'#888780', callback: v => U.fmt(v) } },
+          y: { grid: { display: false }, ticks: { font:{size:11}, color:'#888780' } }
+        }
+      }
+    });
+  },
+
+  donut_(income, expenses, saved) {
+    const ctx = U.$('chart-donut'); if (!ctx) return;
+    if (this.donut) this.donut.destroy();
+    const avail = Math.max(0, income - expenses - saved);
+    const ep = income > 0 ? Math.round(expenses/income*100) : 0;
+    const sp = income > 0 ? Math.round(saved/income*100) : 0;
+    const ap = Math.max(0, 100 - ep - sp);
+    this.donut = new Chart(ctx, {
+      type: 'doughnut',
+      data: { datasets: [{ data: [ep, sp, ap], backgroundColor: ['#D85A30','#1D9E75','#B4B2A9'], borderWidth: 0, hoverOffset: 4 }] },
+      options: { responsive: true, maintainAspectRatio: false, cutout: '68%',
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' ' + c.parsed + '%' } } }
+      }
+    });
+    U.$('donut-legend').innerHTML = [
+      ['#D85A30','Expenses', ep, expenses],
+      ['#1D9E75','Saved',    sp, saved],
+      ['#B4B2A9','Available',ap, avail]
+    ].map(([col,lbl,pct,amt]) => `
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--t1)">
+          <span style="width:9px;height:9px;border-radius:2px;background:${col};flex-shrink:0"></span>${lbl}
+        </span>
+        <span style="font-size:12px;font-weight:500">${pct}% — ${U.fmt(amt)}</span>
+      </div>`).join('');
+  },
+
+  trend_(stubs) {
+    const ctx = U.$('chart-income-trend'); if (!ctx) return;
+    if (this.trend) this.trend.destroy();
+    const byM = {};
+    stubs.forEach(p => { const k = U.mk(p.date); byM[k] = (byM[k]||0) + p.gross; });
+    const sorted = Object.entries(byM).sort((a,b) => a[0].localeCompare(b[0])).slice(-6);
+    this.trend = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: sorted.map(([k]) => U.ml(k).split(' ')[0]),
+        datasets: [{ data: sorted.map(([,v]) => Math.round(v)), borderColor: '#1D9E75', backgroundColor: 'rgba(29,158,117,.1)', fill: true, tension: .3, pointRadius: 4 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' ' + U.fmtD(c.parsed.y) } } },
+        scales: {
+          y: { grid: { color: 'rgba(136,135,128,.15)' }, ticks: { font:{size:11}, color:'#888780', callback: v => U.fmt(v) } },
+          x: { grid: { display: false }, ticks: { font:{size:11}, color:'#888780' }, autoSkip: false }
+        }
+      }
+    });
+  }
+};
+
+// ── DASHBOARD VIEW ────────────────────────────────────────
+const Dashboard = {
+  load() {
+    const mk = U.$('month-picker')?.value || U.mk(new Date());
+    const txM = S.transactions.filter(t => U.mk(t.date) === mk);
+    const income   = txM.filter(t => t.type === 'income').reduce((s,t) => s+t.amount, 0);
+    const expenses = txM.filter(t => t.type === 'expense').reduce((s,t) => s+t.amount, 0);
+    const saved    = Math.max(0, income - expenses);
+    const balance  = Math.max(0, saved * .4); // rough unallocated estimate
+
+    U.$('kpi-income').textContent   = U.fmt(income);
+    U.$('kpi-expenses').textContent = U.fmt(expenses);
+    U.$('kpi-saved').textContent    = U.fmt(saved);
+    U.$('kpi-balance').textContent  = U.fmt(balance);
+    U.$('kpi-exp-sub').textContent  = income > 0 ? `${Math.round(expenses/income*100)}% of income` : '';
+    U.$('kpi-saved-sub').textContent = income > 0 ? `${Math.round(saved/income*100)}% savings rate` : '';
+    U.$('kpi-income-sub').textContent = S.profile.employer || '';
+    U.$('dash-period-lbl').textContent = U.ml(mk);
+
+    Charts.spend_(txM);
+    Charts.donut_(income, expenses, saved);
+    this._recentTx([...txM].reverse().slice(0, 6));
+    this._budgetBars(txM);
+  },
+
+  _recentTx(list) {
+    U.$('dash-recent').innerHTML = list.length
+      ? list.map(U.txRow).join('')
+      : '<p class="empty">No transactions this month.</p>';
+  },
+
+  _budgetBars(txList) {
+    const el = U.$('budget-bars');
+    const totals = {};
+    txList.filter(t => t.type === 'expense').forEach(t => { totals[t.category] = (totals[t.category]||0)+t.amount; });
+    el.innerHTML = CFG.categories.filter(c => c.id !== 'income' && (totals[c.id]||0) > 0).map(c => {
+      const spent = Math.round(totals[c.id]||0);
+      const budget = c.monthly || 0;
+      const pct = budget > 0 ? Math.min(100, Math.round(spent/budget*100)) : 100;
+      const over = spent > budget && budget > 0;
+      return `<div style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <span style="font-size:12px">${U.catIcon(c.id)} ${c.name}</span>
+          <span style="font-size:12px;font-family:var(--mono)">
+            ${U.fmt(spent)} <span style="color:var(--t2)">/ ${U.fmt(budget)}</span>
+            ${over ? '<span style="background:var(--danger-l);color:#4A1B0C;font-size:10px;padding:2px 6px;border-radius:4px;margin-left:6px">over</span>' : ''}
+          </span>
+        </div>
+        <div class="prog-track">
+          <div class="prog-fill" style="width:${pct}%;background:${over?'#D85A30':U.catColor(c.id)}"></div>
+        </div>
+      </div>`;
+    }).join('') || '<p style="font-size:12px;color:var(--t2)">No expenses recorded yet.</p>';
+  }
+};
+
+// ── TRANSACTION VIEW ──────────────────────────────────────
+const TxView = {
+  load() {
+    const mk   = U.$('tx-month')?.value || U.mk(new Date());
+    const cat  = U.$('tx-cat')?.value  || '';
+    const type = U.$('tx-type')?.value || '';
+    let list = S.transactions.filter(t => U.mk(t.date) === mk);
+    if (cat)  list = list.filter(t => t.category === cat);
+    if (type) list = list.filter(t => t.type === type);
+    const el = U.$('tx-list');
+    el.innerHTML = list.length
+      ? [...list].reverse().map(U.txRow).join('')
+      : '<p class="empty">No transactions found.</p>';
+  }
+};
+
+// ── TRANSACTION ACTIONS ───────────────────────────────────
+const TxActions = {
+  async save() {
+    const date   = U.$('tx-date').value;
+    const amount = parseFloat(U.$('tx-amount').value);
+    const desc   = U.$('tx-desc').value.trim();
+    const cat    = U.$('tx-cat-sel').value;
+    const type   = U.$('tx-type-sel').value;
+    const notes  = U.$('tx-notes').value.trim();
+    if (!date || !amount || !desc) { U.toast('Fill all required fields'); return; }
+    const id = U.uid();
+    try {
+      await Sheets.append('Transactions', [[id, date, desc, amount, cat, type, notes, '']]);
+      S.transactions.push({ id, date, description: desc, amount, category: cat, type, notes, psId: '' });
+      document.getElementById('dlg-tx').close();
+      Dashboard.load();
+      U.toast('Transaction saved ✓');
+    } catch(e) { U.toast('Error saving — check console'); console.error(e); }
+  }
+};
+
+// ── PAY STUB ACTIONS ──────────────────────────────────────
+const PsActions = {
+  async save() {
+    const date     = U.$('ps-date').value;
+    const gross    = parseFloat(U.$('ps-gross').value);
+    const net      = parseFloat(U.$('ps-net').value);
+    const employer = U.$('ps-employer').value.trim();
+    const period   = U.$('ps-period').value.trim();
+    if (!date || !gross || !net) { U.toast('Fill all required fields'); return; }
+    const id  = U.uid();
+    const tax = +(gross - net).toFixed(2);
+    try {
+      await Sheets.append('PayStubs', [[id, date, employer, gross, net, tax, period]]);
+      S.payStubs.push({ id, date, employer, gross, net, tax, period });
+      // Auto-log income transaction
+      const txId = U.uid();
+      await Sheets.append('Transactions', [[txId, date, employer || 'Direct deposit', net, 'income', 'income', 'Pay stub', id]]);
+      S.transactions.push({ id: txId, date, description: employer || 'Direct deposit', amount: net, category: 'income', type: 'income', notes: 'Pay stub', psId: id });
+      document.getElementById('dlg-ps').close();
+      PsView.load();
+      U.toast('Pay stub recorded ✓');
+    } catch(e) { U.toast('Error saving — check console'); console.error(e); }
+  }
+};
+
+// ── PAY STUB VIEW ─────────────────────────────────────────
+const PsView = {
+  load() {
+    const yr = new Date().getFullYear();
+    const ytd = S.payStubs.filter(p => new Date(p.date).getFullYear() === yr);
+    U.$('ytd-gross').textContent = U.fmt(ytd.reduce((s,p) => s+p.gross, 0));
+    U.$('ytd-net').textContent   = U.fmt(ytd.reduce((s,p) => s+p.net, 0));
+    Charts.trend_(S.payStubs);
+    U.$('ps-list').innerHTML = S.payStubs.length
+      ? [...S.payStubs].reverse().slice(0,12).map(p => `
+          <div class="ps-row">
+            <div>
+              <p style="font-size:12px;font-weight:500">${p.date}</p>
+              <p style="font-size:11px;color:var(--t2);margin-top:1px">${p.employer || 'Direct deposit'} · ${p.period || 'Bi-weekly'}</p>
+            </div>
+            <div style="text-align:right">
+              <p style="font-size:13px;font-weight:500;font-family:var(--mono)">${U.fmtD(p.net)}</p>
+              <p style="font-size:11px;color:var(--t2);margin-top:1px">net · gross ${U.fmtD(p.gross)}</p>
+            </div>
+          </div>`).join('')
+      : '<p class="empty">No pay stubs yet.</p>';
+  }
+};
+
+// ── GOAL ACTIONS ──────────────────────────────────────────
+const GoalActions = {
+  async save() {
+    const name    = U.$('goal-name').value.trim();
+    const target  = parseFloat(U.$('goal-target').value);
+    const current = parseFloat(U.$('goal-current').value) || 0;
+    const date    = U.$('goal-date').value;
+    if (!name || !target) { U.toast('Fill all required fields'); return; }
+    const id = U.uid();
+    try {
+      await Sheets.append('SavingsGoals', [[id, name, target, current, date, '', 'active']]);
+      S.goals.push({ id, name, target, current, targetDate: date, color: '', status: 'active' });
+      document.getElementById('dlg-goal').close();
+      SavingsView.load();
+      U.toast('Goal created ✓');
+    } catch(e) { U.toast('Error saving — check console'); console.error(e); }
+  }
+};
+
+// ── SAVINGS VIEW ──────────────────────────────────────────
+const SavingsView = {
+  COLORS: ['#1D9E75','#7F77DD','#EF9F27','#D85A30','#85B7EB'],
+  load() {
+    const el = U.$('goals-grid');
+    if (!S.goals.length) { el.innerHTML = '<p class="empty">No goals yet.</p>'; return; }
+    el.innerHTML = S.goals.map((g, i) => {
+      const pct   = g.target > 0 ? Math.min(100, Math.round(g.current/g.target*100)) : 0;
+      const color = g.color || this.COLORS[i % this.COLORS.length];
+      return `<div class="card">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+          <p style="font-size:13px;font-weight:500">${g.name}</p>
+          <span style="font-size:11px;font-weight:500;background:var(--accent-l);color:var(--accent-d);padding:3px 8px;border-radius:4px">${pct}%</span>
+        </div>
+        <div class="prog-track"><div class="prog-fill" style="width:${pct}%;background:${color}"></div></div>
+        <div style="display:flex;justify-content:space-between;margin-top:6px">
+          <p style="font-size:11px;color:var(--t2)">${U.fmtD(g.current)} saved</p>
+          <p style="font-size:11px;color:var(--t2)">${U.fmtD(g.target)} goal</p>
+        </div>
+        ${g.targetDate ? `<p style="font-size:11px;color:var(--t2);margin-top:3px">Target: ${g.targetDate}</p>` : ''}
+        <button class="btn btn-sm btn-primary" style="margin-top:10px" onclick="GoalActions.contribute('${g.id}')">+ Contribute</button>
+      </div>`;
+    }).join('');
+  }
+};
+
+GoalActions.contribute = function(id) {
+  const amt = parseFloat(prompt('Amount to add ($)?'));
+  if (!amt || isNaN(amt)) return;
+  const g = S.goals.find(g => g.id === id);
+  if (!g) return;
+  g.current += amt;
+  // TODO: find row index and PUT to update current amount
+  SavingsView.load();
+  U.toast(`Added ${U.fmtD(amt)} to "${g.name}" ✓`);
+};
+
+// ── AI ADVISOR ────────────────────────────────────────────
+const Advisor = {
+  async refresh() {
+    const key = localStorage.getItem('bp_apikey');
+    if (!key) {
+      U.$('advisor-out').innerHTML = `<div class="empty">
+        <p>Add your Anthropic API key in Settings to enable AI insights.</p>
+        <button class="btn btn-sm" style="margin-top:10px" onclick="App.showView('settings')">Go to settings →</button>
+      </div>`; return;
+    }
+
+    U.$('advisor-out').innerHTML = '<div class="loading-state">Analyzing 3 months of spending...</div>';
+
+    const cutoff = new Date(); cutoff.setMonth(cutoff.getMonth() - 3);
+    const recent = S.transactions.filter(t => new Date(t.date) >= cutoff);
+    const summary = this._summarize(recent);
+
+    const prompt = `You are a personal finance advisor. Analyze this spending summary and return a JSON array of 4–5 insight objects.
+Each object: { "type": "warning"|"tip"|"success"|"opportunity", "title": "max 6 words", "body": "specific advice with numbers, max 35 words", "saving": monthly_dollar_saving_or_0 }
+Respond with ONLY the JSON array. No markdown, no explanation.
+
+${summary}`;
+
+    try {
+      const r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 900, messages: [{ role: 'user', content: prompt }] })
+      });
+      const d = await r.json();
+      const text = (d.content?.[0]?.text || '[]').replace(/```json|```/g, '').trim();
+      this._render(JSON.parse(text));
+    } catch(e) {
+      U.$('advisor-out').innerHTML = '<div class="empty">Could not load insights. Check your API key and try again.</div>';
+      console.error(e);
+    }
+  },
+
+  _summarize(txs) {
+    const byMonth = {};
+    txs.forEach(t => {
+      const k = U.mk(t.date);
+      if (!byMonth[k]) byMonth[k] = { income: 0, by_cat: {}, total: 0 };
+      if (t.type === 'income') byMonth[k].income += t.amount;
+      else { byMonth[k].by_cat[t.category] = (byMonth[k].by_cat[t.category]||0) + t.amount; byMonth[k].total += t.amount; }
+    });
+    let out = 'SPENDING SUMMARY (last 3 months):\n';
+    Object.entries(byMonth).sort().forEach(([k, d]) => {
+      out += `\n${U.ml(k)}: income $${Math.round(d.income)}, expenses $${Math.round(d.total)}\n`;
+      Object.entries(d.by_cat).sort((a,b)=>b[1]-a[1]).slice(0,7).forEach(([c,v]) => { out += `  ${c}: $${Math.round(v)}\n`; });
+    });
+    return out;
+  },
+
+  _render(insights) {
+    if (!insights?.length) { U.$('advisor-out').innerHTML = '<div class="empty">Not enough data for insights yet.</div>'; return; }
+    const styles = {
+      warning:     { bg: '#FAEEDA', tc: '#633806', bc: '#854F0B', icon: '⚠️' },
+      tip:         { bg: '#EEEDFE', tc: '#26215C', bc: '#534AB7', icon: '💡' },
+      success:     { bg: '#E1F5EE', tc: '#04342C', bc: '#085041', icon: '✓'  },
+      opportunity: { bg: '#E6F1FB', tc: '#042C53', bc: '#185FA5', icon: '📈' }
+    };
+    const totalSave = insights.reduce((s, i) => s + (i.saving||0), 0);
+    U.$('advisor-out').innerHTML =
+      (totalSave > 0 ? `<div style="background:var(--accent-l);border-radius:var(--r);padding:12px 16px;margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <p style="font-size:11px;font-weight:500;color:var(--accent-d)">Potential monthly savings</p>
+          <p style="font-size:20px;font-weight:500;font-family:var(--mono);color:var(--accent-d)">${U.fmtD(totalSave)}/mo</p>
+        </div><span style="font-size:28px">💰</span></div>` : '') +
+      insights.map(i => {
+        const s = styles[i.type] || styles.tip;
+        return `<div class="insight" style="background:${s.bg}">
+          <p class="insight-title" style="color:${s.tc}">${s.icon} ${i.title}</p>
+          <p class="insight-body" style="color:${s.bc}">${i.body}${i.saving > 0 ? ` Save ~${U.fmtD(i.saving)}/mo.` : ''}</p>
+        </div>`;
+      }).join('') +
+      `<p style="font-size:11px;color:var(--t2);text-align:center;margin-top:1rem">Based on your last 3 months of transactions.</p>`;
+  }
+};
+
+// ── SETTINGS VIEW ─────────────────────────────────────────
+const SettingsView = {
+  load() {
+    U.$('set-name').value      = S.profile.name || '';
+    U.$('set-employer').value  = S.profile.employer || '';
+    U.$('set-payfreq').value   = S.profile.payFrequency || 'biweekly';
+    U.$('set-sheetid').textContent = CFG.google.spreadsheetId;
+    U.$('set-sheet-link').href = `https://docs.google.com/spreadsheets/d/${CFG.google.spreadsheetId}`;
+    U.$('set-apikey').value    = localStorage.getItem('bp_apikey') || '';
+    U.$('budget-form').innerHTML = CFG.categories.filter(c => c.id !== 'income').map(c => `
+      <div class="fg">
+        <label class="fl">${c.name} ($/month)</label>
+        <input class="fi" type="number" data-cat="${c.id}" value="${c.monthly||0}">
+      </div>`).join('');
+  },
+
+  async saveProfile() {
+    const name    = U.$('set-name').value.trim();
+    const employer = U.$('set-employer').value.trim();
+    const payFreq = U.$('set-payfreq').value;
+    S.profile = { ...S.profile, name, employer, payFrequency: payFreq };
+    try {
+      await Sheets.put('Profile!A2:B5', [['name',name],['employer',employer],['payFrequency',payFreq]]);
+      U.$('dash-name').textContent = name || 'Dashboard';
+      U.toast('Profile saved ✓');
+    } catch(e) { U.toast('Error saving profile'); }
+  },
+
+  saveBudgets() {
+    document.querySelectorAll('#budget-form input[data-cat]').forEach(inp => {
+      const c = CFG.categories.find(c => c.id === inp.dataset.cat);
+      if (c) c.monthly = parseFloat(inp.value) || 0;
+    });
+    localStorage.setItem('bp_budgets', JSON.stringify(CFG.categories));
+    U.toast('Budgets saved ✓');
+  },
+
+  saveApiKey() {
+    const k = U.$('set-apikey').value.trim();
+    k ? localStorage.setItem('bp_apikey', k) : localStorage.removeItem('bp_apikey');
+    U.toast(k ? 'API key saved ✓' : 'API key removed');
+  }
+};
+
+// ── MODALS ────────────────────────────────────────────────
+const Modals = {
+  openTx() {
+    U.$('tx-date').value = U.today();
+    U.$('tx-amount').value = U.$('tx-desc').value = U.$('tx-notes').value = '';
+    U.$('tx-type-sel').value = 'expense';
+    U.fillCatSelect('tx-cat-sel');
+    U.$('tx-cat-grp').style.display = 'block';
+    document.getElementById('dlg-tx').showModal();
+  },
+  toggleTxType() {
+    U.$('tx-cat-grp').style.display = U.$('tx-type-sel').value === 'income' ? 'none' : 'block';
+  },
+  openPs() {
+    U.$('ps-date').value = U.today();
+    U.$('ps-gross').value = U.$('ps-net').value = U.$('ps-period').value = '';
+    U.$('ps-employer').value = S.profile.employer || '';
+    document.getElementById('dlg-ps').showModal();
+  },
+  openGoal() {
+    U.$('goal-name').value = U.$('goal-target').value = U.$('goal-date').value = '';
+    U.$('goal-current').value = '0';
+    document.getElementById('dlg-goal').showModal();
+  }
+};
+
+// ── APP ───────────────────────────────────────────────────
+const App = {
+  showScreen(name) {
+    ['auth','setup','app'].forEach(n => U.$(`screen-${n}`).hidden = n !== name);
+  },
+
+  showView(name) {
+    document.querySelectorAll('#main > section').forEach(s => s.hidden = true);
+    U.$(`view-${name}`).hidden = false;
+    document.querySelectorAll('.nav-btn[data-view]').forEach(b => b.classList.toggle('active', b.dataset.view === name));
+    if (name === 'dashboard')    Dashboard.load();
+    if (name === 'transactions') TxView.load();
+    if (name === 'paystubs')     PsView.load();
+    if (name === 'savings')      SavingsView.load();
+    if (name === 'settings')     SettingsView.load();
+  },
+
+  async onAuth() {
+    this.showScreen('app');
+
+    // Load all data in parallel; if first run, bootstrap the spreadsheet
+    try {
+      const [txR, psR, grR, prR] = await Promise.all([
+        Sheets.get('Transactions!A:H'), Sheets.get('PayStubs!A:G'),
+        Sheets.get('SavingsGoals!A:G'), Sheets.get('Profile!A:B')
+      ]);
+      S.transactions = S.parseTx(txR);
+      S.payStubs     = S.parsePs(psR);
+      S.goals        = S.parseGoals(grR);
+      S.profile      = S.parseProfile(prR);
+    } catch(e) {
+      // First run or empty sheet
+      await Sheets.bootstrap().catch(console.error);
+    }
+
+    // Restore budget overrides
+    const saved = localStorage.getItem('bp_budgets');
+    if (saved) { try { CFG.categories = JSON.parse(saved); } catch(e){} }
+
+    // Wire nav buttons
+    document.querySelectorAll('.nav-btn[data-view]').forEach(btn => {
+      btn.addEventListener('click', () => this.showView(btn.dataset.view));
+    });
+
+    // Set avatar initials
+    const displayName = S.profile.name || Auth.userInfo?.name?.split(' ')[0] || 'U';
+    U.$('dash-name').textContent = displayName;
+    document.querySelectorAll('.avatar').forEach(a => a.textContent = displayName[0].toUpperCase());
+
+    U.fillMonthPicker('month-picker');
+    U.fillMonthPicker('tx-month');
+    U.fillCatSelect('tx-cat', true);
+
+    if (!S.profile.name) {
+      // First-time setup
+      U.$('s-name').value = Auth.userInfo?.name || '';
+      this.showScreen('setup');
+    } else {
+      this.showView('dashboard');
+    }
+  },
+
+  async completeSetup() {
+    const name    = U.$('s-name').value.trim();
+    const employer = U.$('s-employer').value.trim();
+    const payFreq = U.$('s-payfreq').value;
+    const salary  = U.$('s-salary').value;
+    const sheetId = U.$('s-sheetid').value.trim();
+    if (!name || !sheetId) { U.toast('Name and Sheet ID are required'); return; }
+    CFG.google.spreadsheetId = sheetId;
+    S.profile = { name, employer, payFrequency: payFreq, grossSalary: salary };
+    try {
+      await Sheets.bootstrap();
+      await Sheets.put('Profile!A2:B5', [['name',name],['employer',employer],['payFrequency',payFreq],['grossSalary',salary]]);
+      this.showScreen('app');
+      U.$('dash-name').textContent = name;
+      document.querySelectorAll('.avatar').forEach(a => a.textContent = name[0].toUpperCase());
+      U.fillMonthPicker('month-picker');
+      U.fillMonthPicker('tx-month');
+      U.fillCatSelect('tx-cat', true);
+      document.querySelectorAll('.nav-btn[data-view]').forEach(btn => {
+        btn.addEventListener('click', () => this.showView(btn.dataset.view));
+      });
+      this.showView('dashboard');
+      U.toast('Welcome to BudgetPilot 🎉');
+    } catch(e) {
+      U.toast('Setup failed — check your Sheet ID and permissions');
+      console.error(e);
+    }
+  },
+
+  async init() {
+    await loadConfig();
+    Auth.init();
+  }
+};
+
+App.init();
+</script>
+</body>
+</html>
